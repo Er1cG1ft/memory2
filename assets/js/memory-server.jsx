@@ -2,23 +2,38 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import _ from 'lodash';
 
-export default function game_init(root) {
-  ReactDOM.render(<Starter />, root);
+export default function game_init(root, channel) {
+  ReactDOM.render(<Memory channel={channel} />, root);
 }
 
-class Starter extends React.Component {
+class Memory extends React.Component {
   constructor(props) {
     super(props);
-    this.flipTile = this.flipTile.bind(this);
+    this.channel = props.channel;
+    this.on_move = this.on_move.bind(this);
     this.state = {
       score: 0,
       clicks: 0,
-      lastClick: {row: -1, col: -1},
-      tiles: [],
       flipping: false,
       won: false
       };
-    this.startGame();
+    //this.startGame();
+    
+    this.channel
+        .join()
+        .receive("ok", this.got_view.bind(this))
+        .receive("error", resp => { console.log("Unable to join", resp); });
+  }
+  
+  got_view(view) {
+    console.log("new view", view);
+    this.setState(view.game);
+  }
+  
+  on_move(row, column) {
+    console.log(row, column);
+    this.channel.push("move", { location: [row, column] })
+        .receive("ok", this.got_view.bind(this));
   }
 
   restart(_ev) {
@@ -26,13 +41,6 @@ class Starter extends React.Component {
   }
   
   startGame() {
-    var positions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-    var tiles = _.shuffle(["A", "A", "B", "B", "C", "C", "D", "D", "E", "E", "F", "F", "G", "G", "H", "H"]);
-    this.state.tiles = [];
-    for (var i = 1; i < positions.length + 1; i++) {
-      this.state.tiles.push({name: tiles[i - 1], flipped: false, matched: false});
-    }
-    this.state.tiles = _.chunk(this.state.tiles, 4);
     this.setState({lastClick: this.state.lastClick, score: 0, flipping: false, won: false, clicks: 0});
   }
   
@@ -93,11 +101,6 @@ class Starter extends React.Component {
       <div className="container">
         <div className="row">
           <div className="column">
-            <h2>Memory Game - Letter Edition</h2>
-          </div>
-        </div>
-        <div className="row">
-          <div className="column">
             <h4>Score: {this.state.score}</h4>
             <h4>Clicks: {this.state.clicks}</h4>
           </div>
@@ -115,7 +118,7 @@ class Starter extends React.Component {
 function Tile(props) {
   if (props.flipped) {
     return (
-      <div className="tile hover" onClick={() => props.root.flipTile(props.row, props.col)}>
+      <div className="tile hover" onClick={() => props.root.on_move(props.row, props.col)}>
         {props.name}
       </div>
       );
@@ -128,7 +131,7 @@ function Tile(props) {
       );
     } else {
     return (
-      <div className="tile hover" onClick={() => props.root.flipTile(props.row, props.col)}>
+      <div className="tile hover" onClick={() => props.root.on_move(props.row, props.col)}>
         
       </div>
       );
