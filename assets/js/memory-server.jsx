@@ -11,6 +11,7 @@ class Memory extends React.Component {
     super(props);
     this.channel = props.channel;
     this.on_move = this.on_move.bind(this);
+    this.restart = this.restart.bind(this);
     this.state = {};
     
     this.channel
@@ -20,8 +21,16 @@ class Memory extends React.Component {
   }
   
   got_view(view) {
-    console.log("new view", view);
     this.setState(view.game);
+    let won = true;
+    for (var i = 0; i < this.state.tiles.length; i++) {
+      for (var j = 0; j < this.state.tiles[i].length; j++) {
+        if (!this.state.tiles[i][j].matched) {
+          won = false;
+        }
+      }
+    }
+    this.setState({won: won});
     //handle timeout
     if (view.game.lastClick[0] == -1 && !view.game.lastClick[2]) {
       this.setState({flipping: true});
@@ -45,55 +54,8 @@ class Memory extends React.Component {
   }
 
   restart(_ev) {
-    this.startGame();
-  }
-  
-  startGame() {
-    this.setState({lastClick: this.state.lastClick, score: 0, flipping: false, won: false, clicks: 0});
-  }
-  
-  determineMatch(row, col) {
-    if (this.state.lastClick.row > -1) {
-      let newScore = 0;
-      if (this.state.tiles[row][col].name == this.state.tiles[this.state.lastClick.row][this.state.lastClick.col].name) {
-        this.state.tiles[row][col].matched = true;
-        this.state.tiles[this.state.lastClick.row][this.state.lastClick.col].matched = true;
-        newScore = this.state.score + 10;
-      } else {
-        newScore = this.state.score - 1;
-      }
-      this.state.tiles[row][col].flipped = false;
-      this.state.tiles[this.state.lastClick.row][this.state.lastClick.col].flipped = false;
-      this.setState({tiles: this.state.tiles, lastClick: {row: -1, col: -1}, flipping: false, score: newScore});
-    } else {
-      this.setState({tiles: this.state.tiles, lastClick: {row: row, col: col}, flipping: false});
-    }
-    let won = true;
-    for (var i = 0; i < this.state.tiles.length; i++) {
-      for (var j = 0; j < this.state.tiles[i].length; j++) {
-        if (!this.state.tiles[i][j].matched) {
-          won = false;
-        }
-      }
-    }
-    this.setState({won: won});
-  }
-  
-  flipTile(row, col) {
-    if (!(this.state.lastClick.row == row && this.state.lastClick.col == col)) {
-      if (!this.state.flipping) {
-        this.state.tiles[row][col].flipped = !this.state.tiles[row][col].flipped;
-        this.setState({tiles: this.state.tiles, clicks: this.state.clicks + 1});
-        this.setState({flipping: true});
-        if (this.state.lastClick.row == -1) {
-          this.determineMatch(row, col);
-        } else {
-          setTimeout(function() {
-            this.determineMatch(row, col);
-          }.bind(this), 1000);
-        }
-      }
-    }
+    this.channel.push("restart", {})
+        .receive("ok", this.got_view.bind(this));
   }
 
   render() {

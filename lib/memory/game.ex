@@ -4,22 +4,22 @@ defmodule Memory.Game do
       lastClick: [-1, -1, false],
       tiles: new_tiles(),
       score: 0,
-      clicks: 0
+      clicks: 0,
+      won: false
     }
   end
   
   def client_view(game) do
-    tiles = game.tiles
-    lastClick = game.lastClick
     %{
-      tiles: tiles,
-      lastClick: lastClick
+      tiles: game.tiles,
+      lastClick: game.lastClick,
+      score: game.score,
+      clicks: game.clicks
     }
   end
   
   def move(game, loc) do
     tiles = game.tiles
-    new_game = game
     lastClick = game.lastClick
     #only check if different tile
     if loc != game.lastClick do
@@ -59,16 +59,19 @@ defmodule Memory.Game do
             end
           end)
         end)
+        
         #update game state & set last clicked back to -1
-        Map.merge(game, %{tiles: tiles, lastClick: [-1, -1, true]})
+        Map.merge(game, %{tiles: tiles, lastClick: [-1, -1, true], 
+          clicks: game.clicks + 1, score: game.score + 10})
       #if no match
       else
         #return that last click was not match
-        Map.merge(game, %{tiles: tiles, lastClick: [-1, -1, false]})
+        Map.merge(game, %{tiles: tiles, lastClick: [-1, -1, false], 
+          clicks: game.clicks + 1, score: game.score - 1})
       end
     else
       #this is the first click, just return game state
-      Map.merge(game, %{tiles: tiles, lastClick: loc})
+      Map.merge(game, %{tiles: tiles, lastClick: loc, clicks: game.clicks + 1})
     end
   end
   
