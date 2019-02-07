@@ -116,27 +116,25 @@ class Memory extends React.Component {
 }
 
 function Tile(props) {
-  if (props.flipped) {
+  if (props.matched) {
+      return (
+      <div className="tile matched">
+        {props.name}
+      </div>
+      );
+    } else if (props.flipped) {
     return (
       <div className="tile hover" onClick={() => props.root.on_move(props.row, props.col)}>
         {props.name}
       </div>
       );
   } else {
-    if (props.matched) {
-      return (
-      <div className="tile matched">
-        {props.name}
-      </div>
-      );
-    } else {
     return (
       <div className="tile hover" onClick={() => props.root.on_move(props.row, props.col)}>
         
       </div>
       );
     }
-  }
 }
 
 function Row(props) {
@@ -149,7 +147,6 @@ function Row(props) {
         row={props.rowNum}
         col={index}
         flipped={col.flipped}
-        matched={col.matched}
         root={props.root} />
       </div>
       );
