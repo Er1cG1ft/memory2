@@ -11,13 +11,7 @@ class Memory extends React.Component {
     super(props);
     this.channel = props.channel;
     this.on_move = this.on_move.bind(this);
-    this.state = {
-      score: 0,
-      clicks: 0,
-      flipping: false,
-      won: false
-      };
-    //this.startGame();
+    this.state = {};
     
     this.channel
         .join()
@@ -28,12 +22,26 @@ class Memory extends React.Component {
   got_view(view) {
     console.log("new view", view);
     this.setState(view.game);
+    //handle timeout
+    if (view.game.lastClick[0] == -1 && !view.game.lastClick[2]) {
+      this.setState({flipping: true});
+      setTimeout(function() {
+        for (var i = 0; i < view.game.tiles.length; i++) {
+          for (var j = 0; j < view.game.tiles[i].length; j++) {
+            view.game.tiles[i][j].flipped = false;
+          }
+        }
+        this.setState(view.game);
+        this.setState({flipping: false});
+      }.bind(this), 1000);
+    }
   }
   
   on_move(row, column) {
-    console.log(row, column);
+    if (!this.state.flipping) {
     this.channel.push("move", { location: [row, column] })
         .receive("ok", this.got_view.bind(this));
+    }
   }
 
   restart(_ev) {
@@ -54,8 +62,8 @@ class Memory extends React.Component {
       } else {
         newScore = this.state.score - 1;
       }
-        this.state.tiles[row][col].flipped = false;
-        this.state.tiles[this.state.lastClick.row][this.state.lastClick.col].flipped = false;
+      this.state.tiles[row][col].flipped = false;
+      this.state.tiles[this.state.lastClick.row][this.state.lastClick.col].flipped = false;
       this.setState({tiles: this.state.tiles, lastClick: {row: -1, col: -1}, flipping: false, score: newScore});
     } else {
       this.setState({tiles: this.state.tiles, lastClick: {row: row, col: col}, flipping: false});

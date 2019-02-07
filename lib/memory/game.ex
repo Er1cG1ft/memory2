@@ -1,8 +1,10 @@
 defmodule Memory.Game do
   def new do
     %{
-      lastClick: [-1, -1],
+      lastClick: [-1, -1, false],
       tiles: new_tiles(),
+      score: 0,
+      clicks: 0
     }
   end
   
@@ -24,26 +26,16 @@ defmodule Memory.Game do
       #flip the tile
       tiles = Enum.map(tiles, fn r ->
         Enum.map(r, fn t ->
-          if Map.equal?(t, Enum.at(Enum.at(tiles, Enum.at(loc, 0)), Enum.at(loc, 1))) do
-            Map.put(t, :flipped, !Map.get(t, :flipped))
-          else t
+          if Map.equal?(t, Enum.at(Enum.at(tiles, Enum.at(loc, 0)), Enum.at(loc, 1))) ||
+            (Enum.at(lastClick, 0) !== -1 && Map.equal?(t, Enum.at(Enum.at(tiles, Enum.at(lastClick, 0)), Enum.at(lastClick, 1)))) do
+            Map.put(t, :flipped, true)
+          else Map.put(t, :flipped, false)
           end
         end)
       end)
       new_game = Map.merge(game, %{tiles: tiles})
       determine_match(new_game, loc)
-      
-      # #if we have the first click, check if there's a match with no delay
-      # if Enum.at(lastClick, 0) == -1 do
-      #   IO.puts("here2")
-      # else
-      #   IO.puts("here")
-      #   :timer.sleep(1000)
-      #   determine_match(new_game, loc)
-      #   #Map.merge(game, %{tiles: tiles, lastClick: loc})
-      # end
     else
-      IO.puts("here4")
       Map.merge(game, %{tiles: game.tiles, lastClick: game.lastClick})
     end
   end
@@ -54,6 +46,7 @@ defmodule Memory.Game do
     thisTile = Enum.at(Enum.at(tiles, Enum.at(loc, 0)), Enum.at(loc, 1))
     lastTile = Map.get(Enum.at(Enum.at(tiles, Enum.at(lastClick, 0)), Enum.at(lastClick, 1)), :name)
     
+    #if this is the second click
     if Enum.at(lastClick, 0) > -1 do
       #if we have a match
       if Map.get(thisTile, :name) == lastTile do
@@ -67,18 +60,14 @@ defmodule Memory.Game do
           end)
         end)
         #update game state & set last clicked back to -1
-        Map.merge(game, %{tiles: tiles, lastClick: [-1, -1]})
+        Map.merge(game, %{tiles: tiles, lastClick: [-1, -1, true]})
       #if no match
       else
-        #unflip tiles
-        tiles = Enum.map(tiles, fn r ->
-          Enum.map(r, fn t -> 
-            Map.put(t, :flipped, false)
-          end)
-        end)
-        Map.merge(game, %{tiles: tiles, lastClick: [-1, -1]})
+        #return that last click was not match
+        Map.merge(game, %{tiles: tiles, lastClick: [-1, -1, false]})
       end
     else
+      #this is the first click, just return game state
       Map.merge(game, %{tiles: tiles, lastClick: loc})
     end
   end
